@@ -655,7 +655,7 @@ final class GameScene: SKScene {
     private var cachedBackgroundSize: CGSize = .zero
     private var cachedScanlineTexture: SKTexture?
     private var cachedScanlineSize: CGSize = .zero
-    private let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "DEV"
+    private let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "DEV"
 
     private var score = 0 {
         didSet { updateHUD() }
@@ -920,6 +920,12 @@ final class GameScene: SKScene {
         overlayTertiaryButtonLabel.horizontalAlignmentMode = .center
         overlayTertiaryButtonLabel.verticalAlignmentMode = .center
 
+        overlayVersionLabel.fontColor = Palette.hud.withAlphaComponent(0.78)
+        overlayVersionLabel.fontSize = 13
+        overlayVersionLabel.horizontalAlignmentMode = .center
+        overlayVersionLabel.verticalAlignmentMode = .center
+        overlayVersionLabel.text = "VERSION \(appVersion)"
+
         overlayAudioToggle.fillColor = Palette.lime.withAlphaComponent(0.92)
         overlayAudioToggle.strokeColor = Palette.grid
         overlayAudioToggle.lineWidth = 2
@@ -939,12 +945,6 @@ final class GameScene: SKScene {
         overlayAudioIcon.texture?.filteringMode = .nearest
         overlayAudioIcon.isHidden = true
         overlayAudioValueLabel.isHidden = true
-
-        overlayVersionLabel.fontColor = Palette.hud.withAlphaComponent(0.72)
-        overlayVersionLabel.fontSize = 14
-        overlayVersionLabel.horizontalAlignmentMode = .center
-        overlayVersionLabel.verticalAlignmentMode = .center
-        overlayVersionLabel.text = "VERSION \(appVersion)"
     }
 
     private func layoutScene() {
@@ -968,8 +968,8 @@ final class GameScene: SKScene {
         let secondaryButtonYOffset: CGFloat = isMenu ? -202 : (isScore ? -202 : introSecondaryButtonYOffset)
         let tertiaryButtonYOffset: CGFloat = isMenu ? -170 : (isScore ? -170 : introTertiaryButtonYOffset)
         let scoreBoardYOffset: CGFloat = isScore ? 14 : 28
+        let versionYOffset: CGFloat = isMenu ? 8 : -84
         let audioToggleYOffset: CGFloat = isMenu ? -46 : -84
-        let versionYOffset: CGFloat = isMenu ? -88 : -150
         let overlayButtonRect = CGRect(x: -buttonWidth / 2, y: -26, width: buttonWidth, height: 52)
         let overlayAudioButtonRect = CGRect(x: -buttonWidth / 2, y: -28, width: buttonWidth, height: 56)
 
@@ -1884,8 +1884,8 @@ final class GameScene: SKScene {
         overlayTertiaryButton.isHidden = !hasTertiaryButton
         overlayTertiaryButtonLabel.isHidden = !hasTertiaryButton
         let showScoreBoard = style == .score
-        let showAudioToggle = style == .menu
         let showVersionLabel = style == .menu
+        let showAudioToggle = style == .menu
         overlayScoreboardNode.isHidden = !showScoreBoard
         overlayVersionLabel.isHidden = !showVersionLabel
         overlayAudioToggle.isHidden = !showAudioToggle
