@@ -606,6 +606,7 @@ final class GameScene: SKScene {
     private let overlayTertiaryButton = SKShapeNode(rectOf: CGSize(width: 100, height: 52), cornerRadius: 18)
     private let overlayTertiaryButtonLabel = SKLabelNode(fontNamed: "AvenirNextCondensed-Heavy")
     private let overlayScoreboardNode = SKNode()
+    private let overlayVersionLabel = SKLabelNode(fontNamed: "Menlo-Bold")
     private let overlayAudioToggle = SKShapeNode(rectOf: CGSize(width: 100, height: 52), cornerRadius: 18)
     private let overlayAudioLabel = SKLabelNode(fontNamed: "AvenirNextCondensed-Heavy")
     private let overlayAudioValueLabel = SKLabelNode(fontNamed: "Menlo-Bold")
@@ -654,6 +655,7 @@ final class GameScene: SKScene {
     private var cachedBackgroundSize: CGSize = .zero
     private var cachedScanlineTexture: SKTexture?
     private var cachedScanlineSize: CGSize = .zero
+    private let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "DEV"
 
     private var score = 0 {
         didSet { updateHUD() }
@@ -876,6 +878,7 @@ final class GameScene: SKScene {
         overlayNode.addChild(overlayTertiaryButton)
         overlayNode.addChild(overlayTertiaryButtonLabel)
         overlayNode.addChild(overlayScoreboardNode)
+        overlayNode.addChild(overlayVersionLabel)
         overlayNode.addChild(overlayAudioToggle)
         overlayAudioToggle.addChild(overlayAudioIcon)
         overlayAudioToggle.addChild(overlayAudioLabel)
@@ -936,6 +939,12 @@ final class GameScene: SKScene {
         overlayAudioIcon.texture?.filteringMode = .nearest
         overlayAudioIcon.isHidden = true
         overlayAudioValueLabel.isHidden = true
+
+        overlayVersionLabel.fontColor = Palette.hud.withAlphaComponent(0.72)
+        overlayVersionLabel.fontSize = 14
+        overlayVersionLabel.horizontalAlignmentMode = .center
+        overlayVersionLabel.verticalAlignmentMode = .center
+        overlayVersionLabel.text = "VERSION \(appVersion)"
     }
 
     private func layoutScene() {
@@ -960,6 +969,7 @@ final class GameScene: SKScene {
         let tertiaryButtonYOffset: CGFloat = isMenu ? -170 : (isScore ? -170 : introTertiaryButtonYOffset)
         let scoreBoardYOffset: CGFloat = isScore ? 14 : 28
         let audioToggleYOffset: CGFloat = isMenu ? -46 : -84
+        let versionYOffset: CGFloat = isMenu ? -88 : -150
         let overlayButtonRect = CGRect(x: -buttonWidth / 2, y: -26, width: buttonWidth, height: 52)
         let overlayAudioButtonRect = CGRect(x: -buttonWidth / 2, y: -28, width: buttonWidth, height: 56)
 
@@ -1030,6 +1040,7 @@ final class GameScene: SKScene {
         overlayTertiaryButton.position = CGPoint(x: size.width / 2, y: panelY + tertiaryButtonYOffset)
         overlayTertiaryButtonLabel.position = overlayTertiaryButton.position
         overlayScoreboardNode.position = CGPoint(x: size.width / 2, y: panelY + scoreBoardYOffset)
+        overlayVersionLabel.position = CGPoint(x: size.width / 2, y: panelY + versionYOffset)
         overlayAudioToggle.position = CGPoint(x: size.width / 2, y: panelY + audioToggleYOffset)
         overlayAudioIcon.position = CGPoint(x: -buttonWidth / 2 + 30, y: 0)
         overlayAudioLabel.position = CGPoint(x: 0, y: 0)
@@ -1874,7 +1885,9 @@ final class GameScene: SKScene {
         overlayTertiaryButtonLabel.isHidden = !hasTertiaryButton
         let showScoreBoard = style == .score
         let showAudioToggle = style == .menu
+        let showVersionLabel = style == .menu
         overlayScoreboardNode.isHidden = !showScoreBoard
+        overlayVersionLabel.isHidden = !showVersionLabel
         overlayAudioToggle.isHidden = !showAudioToggle
         updateOverlayButtonPressed(isPressed: false)
         updateOverlaySecondaryButtonPressed(isPressed: false)
