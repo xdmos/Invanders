@@ -26,7 +26,7 @@ Invanders is a retro-inspired iOS arcade shooter built with SpriteKit.
 
 ## Version
 
-Current app version: `2026.03.01`
+Current app version: `2026.03.02`
 
 See [CHANGELOG.md](CHANGELOG.md) for release notes.
 

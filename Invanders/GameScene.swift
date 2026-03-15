@@ -63,15 +63,17 @@ final class GameScene: SKScene {
             case .intro: return Palette.hud
             case .score: return Palette.hud
             case .menu: return Palette.hud
-            case .waveClear: return Palette.hud
+            case .waveClear: return Palette.bullet
             case .gameOver: return UIColor(red: 1.0, green: 0.86, blue: 0.88, alpha: 1.0)
             }
         }
 
         var subtitleFont: UIFont {
             switch self {
-            case .intro, .score, .menu, .waveClear:
+            case .intro, .score, .menu:
                 return UIFont(name: "Menlo-Bold", size: 14) ?? .monospacedSystemFont(ofSize: 14, weight: .bold)
+            case .waveClear:
+                return UIFont(name: "AvenirNextCondensed-Heavy", size: 72) ?? .systemFont(ofSize: 72, weight: .heavy)
             case .gameOver:
                 return UIFont(name: "AvenirNextCondensed-Heavy", size: 20) ?? .systemFont(ofSize: 20, weight: .heavy)
             }
@@ -79,8 +81,10 @@ final class GameScene: SKScene {
 
         var subtitleLineHeight: CGFloat {
             switch self {
-            case .intro, .score, .menu, .waveClear:
+            case .intro, .score, .menu:
                 return 18
+            case .waveClear:
+                return 72
             case .gameOver:
                 return 28
             }
@@ -656,6 +660,7 @@ final class GameScene: SKScene {
     private var cachedScanlineTexture: SKTexture?
     private var cachedScanlineSize: CGSize = .zero
     private let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "DEV"
+    private let waveClearCountdownDuration: TimeInterval = 3.0
 
     private var score = 0 {
         didSet { updateHUD() }
@@ -808,6 +813,7 @@ final class GameScene: SKScene {
             checkForWaveCompletion()
         case .waveTransition:
             waveTransitionTimer -= dt
+            updateWaveClearOverlayCountdown()
             if waveTransitionTimer <= 0 {
                 beginWave()
             }
@@ -1618,15 +1624,45 @@ final class GameScene: SKScene {
         if aliens.contains(where: \.isAlive) == false {
             wave += 1
             gameState = .waveTransition
-            waveTransitionTimer = 1.35
+            waveTransitionTimer = waveClearCountdownDuration
             showOverlay(
                 title: "WAVE CLEAR",
-                subtitle: "Arcade pressure goes up. Next sector is dropping hotter, faster, and denser.",
-                hint: "Stay mobile. Next sector descends with fresh pressure.",
+                subtitle: waveClearSubtitleText(),
+                hint: waveClearHintText(),
                 style: .waveClear
             )
             overlayNode.isHidden = false
         }
+    }
+
+    private func updateWaveClearOverlayCountdown() {
+        guard overlayStyle == .waveClear else { return }
+
+        let contentWidth = overlayPanelSize().width - 54
+        configureOverlayText(
+            in: overlaySubtitleNode,
+            text: waveClearSubtitleText(),
+            font: overlayStyle.subtitleFont,
+            color: overlayStyle.subtitleColor,
+            maxWidth: contentWidth,
+            lineHeight: overlayStyle.subtitleLineHeight
+        )
+        configureOverlayText(
+            in: overlayHintNode,
+            text: waveClearHintText(),
+            font: UIFont(name: "Menlo-Bold", size: 12) ?? .monospacedSystemFont(ofSize: 12, weight: .bold),
+            color: overlayStyle.hintColor,
+            maxWidth: contentWidth - 8,
+            lineHeight: 16
+        )
+    }
+
+    private func waveClearSubtitleText() -> String {
+        String(max(1, Int(ceil(waveTransitionTimer))))
+    }
+
+    private func waveClearHintText() -> String {
+        "Arcade pressure goes up.\nSector \(wave) auto-deploys at zero."
     }
 
     private func triggerGameOver(reason: String) {
@@ -2118,30 +2154,122 @@ final class GameScene: SKScene {
     private func updateMenuContent() {
         overlayScoreboardNode.removeAllChildren()
 
+        let cabinetOuter = SKShapeNode(
+            rectOf: CGSize(width: 252, height: 196),
+            cornerRadius: 26
+        )
+        cabinetOuter.fillColor = UIColor(red: 0.05, green: 0.07, blue: 0.11, alpha: 0.92)
+        cabinetOuter.strokeColor = Palette.orange.withAlphaComponent(0.45)
+        cabinetOuter.lineWidth = 3
+        cabinetOuter.glowWidth = 8
+        cabinetOuter.position = CGPoint(x: 0, y: 6)
+        overlayScoreboardNode.addChild(cabinetOuter)
+
+        let cabinetInner = SKShapeNode(
+            rectOf: CGSize(width: 228, height: 170),
+            cornerRadius: 18
+        )
+        cabinetInner.fillColor = UIColor(red: 0.02, green: 0.04, blue: 0.07, alpha: 0.96)
+        cabinetInner.strokeColor = Palette.cyan.withAlphaComponent(0.20)
+        cabinetInner.lineWidth = 2
+        cabinetInner.position = CGPoint(x: 0, y: 6)
+        overlayScoreboardNode.addChild(cabinetInner)
+
+        let bezelLeft = SKShapeNode(rectOf: CGSize(width: 10, height: 164), cornerRadius: 5)
+        bezelLeft.fillColor = Palette.orange.withAlphaComponent(0.18)
+        bezelLeft.strokeColor = .clear
+        bezelLeft.position = CGPoint(x: -112, y: 6)
+        overlayScoreboardNode.addChild(bezelLeft)
+
+        let bezelRight = SKShapeNode(rectOf: CGSize(width: 10, height: 164), cornerRadius: 5)
+        bezelRight.fillColor = Palette.orange.withAlphaComponent(0.18)
+        bezelRight.strokeColor = .clear
+        bezelRight.position = CGPoint(x: 112, y: 6)
+        overlayScoreboardNode.addChild(bezelRight)
+
         let titleLabel = SKLabelNode(fontNamed: "Menlo-Bold")
         titleLabel.text = "RANK   TOP SCORES"
         titleLabel.fontSize = 18
         titleLabel.fontColor = Palette.bullet
         titleLabel.horizontalAlignmentMode = .center
         titleLabel.verticalAlignmentMode = .center
-        titleLabel.position = CGPoint(x: 0, y: 54)
+        titleLabel.position = CGPoint(x: 0, y: 76)
         overlayScoreboardNode.addChild(titleLabel)
+
+        let titleAccent = SKShapeNode(rectOf: CGSize(width: 150, height: 2), cornerRadius: 1)
+        titleAccent.fillColor = Palette.bullet.withAlphaComponent(0.65)
+        titleAccent.strokeColor = .clear
+        titleAccent.position = CGPoint(x: 0, y: 64)
+        overlayScoreboardNode.addChild(titleAccent)
 
         let entries = Array(scoreBoardEntries.prefix(5))
 
         for index in 0..<5 {
-            let row = SKLabelNode(fontNamed: "Menlo-Bold")
             let value = index < entries.count ? String(format: "%05d", entries[index]) : "-----"
-            row.text = "\(index + 1).    \(value)"
-            row.fontSize = 24
-            row.fontColor = index == 0 ? Palette.lime : Palette.hud
-            row.horizontalAlignmentMode = .center
-            row.verticalAlignmentMode = .center
-            row.position = CGPoint(x: 0, y: 24 - CGFloat(index) * 24)
-            overlayScoreboardNode.addChild(row)
+            let rowNode = makeScoreboardRow(rank: index + 1, value: value, isLeader: index == 0)
+            rowNode.position = CGPoint(x: 0, y: 32 - CGFloat(index) * 25)
+            overlayScoreboardNode.addChild(rowNode)
         }
 
         applyAudioToggleAppearance(isPressed: overlayAudioTogglePressed)
+    }
+
+    private func makeScoreboardRow(rank: Int, value: String, isLeader: Bool) -> SKNode {
+        let rowNode = SKNode()
+
+        let background = SKShapeNode(rectOf: CGSize(width: 206, height: isLeader ? 28 : 22), cornerRadius: 10)
+        if isLeader {
+            background.fillColor = UIColor(red: 0.38, green: 0.28, blue: 0.05, alpha: 0.90)
+            background.strokeColor = Palette.bullet.withAlphaComponent(0.78)
+            background.lineWidth = 2.5
+            background.glowWidth = 5.5
+
+            let shine = SKShapeNode(rectOf: CGSize(width: 196, height: 8), cornerRadius: 4)
+            shine.fillColor = UIColor.white.withAlphaComponent(0.10)
+            shine.strokeColor = .clear
+            shine.position = CGPoint(x: 0, y: 7)
+            rowNode.addChild(shine)
+
+            let crown = SKLabelNode(fontNamed: "Menlo-Bold")
+            crown.text = "TOP"
+            crown.fontSize = 11
+            crown.fontColor = UIColor.black.withAlphaComponent(0.85)
+            crown.horizontalAlignmentMode = .center
+            crown.verticalAlignmentMode = .center
+            crown.position = CGPoint(x: -54, y: 0)
+
+            let crownBadge = SKShapeNode(rectOf: CGSize(width: 30, height: 14), cornerRadius: 6)
+            crownBadge.fillColor = Palette.bullet.withAlphaComponent(0.96)
+            crownBadge.strokeColor = .clear
+            crownBadge.position = crown.position
+            rowNode.addChild(crownBadge)
+            rowNode.addChild(crown)
+        } else {
+            background.fillColor = UIColor(red: 0.08, green: 0.12, blue: 0.16, alpha: 0.78)
+            background.strokeColor = Palette.cyan.withAlphaComponent(0.16)
+            background.lineWidth = 1.5
+        }
+        rowNode.addChild(background)
+
+        let rankLabel = SKLabelNode(fontNamed: "Menlo-Bold")
+        rankLabel.text = String(format: "#%d", rank)
+        rankLabel.fontSize = isLeader ? 18 : 15
+        rankLabel.fontColor = isLeader ? Palette.bullet : Palette.hud.withAlphaComponent(0.92)
+        rankLabel.horizontalAlignmentMode = .left
+        rankLabel.verticalAlignmentMode = .center
+        rankLabel.position = CGPoint(x: -92, y: isLeader ? 0 : -0.5)
+        rowNode.addChild(rankLabel)
+
+        let scoreLabel = SKLabelNode(fontNamed: "Menlo-Bold")
+        scoreLabel.text = value
+        scoreLabel.fontSize = isLeader ? 22 : 18
+        scoreLabel.fontColor = isLeader ? UIColor(red: 1.0, green: 0.97, blue: 0.74, alpha: 1.0) : Palette.hud
+        scoreLabel.horizontalAlignmentMode = .right
+        scoreLabel.verticalAlignmentMode = .center
+        scoreLabel.position = CGPoint(x: 92, y: isLeader ? 0 : -0.5)
+        rowNode.addChild(scoreLabel)
+
+        return rowNode
     }
 
     private func audioToggleBaseFillColor() -> UIColor {
