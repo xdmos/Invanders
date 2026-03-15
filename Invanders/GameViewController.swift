@@ -10,6 +10,10 @@ import SpriteKit
 
 final class GameViewController: UIViewController {
 
+    override func loadView() {
+        view = SKView(frame: UIScreen.main.bounds)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
